@@ -8,9 +8,9 @@ public class GeneralFactory : MonoBehaviour, IFactory
     {
         return new GeneralImageGallery(factory, imagesLoader, imagePrefab, imagesParent);
     }
-    public IImageModel CreateImageModel(ImagesLoader imagesLoader)
+    public IImageModel CreateImageModel()
     {
-        return new GeneralImageModel(imagesLoader);
+        return new GeneralImageModel();
     }
     public IImageView CreateImageView(GameObject imagePrefab, Transform parent)
     {

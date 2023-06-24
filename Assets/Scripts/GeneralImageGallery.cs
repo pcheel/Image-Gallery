@@ -12,6 +12,7 @@ public class GeneralImageGallery : IImageGallery
     private GameObject _imagePrefab;
     private Transform _imagesParent;
     private ScrollRect _scrollRect;
+    private bool _imagePoolIsEmpty;
     private const int DEFAULT_SCREEN_WIDTH = 1080;
 
     public GeneralImageGallery(IFactory factory, ImagesLoader imagesLoader, GameObject imagePrefab, Transform parent)
@@ -28,9 +29,10 @@ public class GeneralImageGallery : IImageGallery
     }
     public void CheckEndOfScroll(Vector2 scrollPosition)
     {
-        Debug.Log(scrollPosition);
-        if (scrollPosition.y < 0f)
+        // Debug.Log(scrollPosition);
+        if (!_imagePoolIsEmpty && scrollPosition.y < 0.00f)
         {
+            Debug.Log(scrollPosition);
             for (int i = 0; i < 2; i++)
             {
                 CreateImage();
@@ -38,12 +40,36 @@ public class GeneralImageGallery : IImageGallery
         }
     }
 
-    private void CreateImage()
+    private async void CreateImage()
     {
-        IImageModel imageModel = _factory.CreateImageModel(_imagesLoader);
-        IImageView imageView = _factory.CreateImageView(_imagePrefab, _imagesParent);
-        ImagePresenter imagePresenter = _factory.CreateImagePresenter(imageModel, imageView);
-        _images.Add(imagePresenter);
+        // if (_imagePoolIsEmpty)
+        // {
+        //     return;
+        // }
+
+        // _imagePoolIsEmpty = true;
+        Sprite image = await _imagesLoader.TryLoadImage();
+        if (image != null)
+        {
+            Debug.Log("not null");
+            IImageModel imageModel = _factory.CreateImageModel();
+            IImageView imageView = _factory.CreateImageView(_imagePrefab, _imagesParent);
+            ImagePresenter imagePresenter = _factory.CreateImagePresenter(imageModel, imageView);
+            imageModel.SetImage(image);
+            _images.Add(imagePresenter);
+            _imagePoolIsEmpty = false;
+        }
+        else
+        {
+            Debug.Log("null");
+            _imagePoolIsEmpty = true;
+        }
+        // IImageModel imageModel = _factory.CreateImageModel(_imagesLoader);
+        // IImageView imageView = _factory.CreateImageView(_imagePrefab, _imagesParent);
+        // ImagePresenter imagePresenter = _factory.CreateImagePresenter(imageModel, imageView);
+        // bool isCorrect = await imagePresenter.TryLoadImage();
+        // Debug.Log(isCorrect);
+        // _images.Add(imagePresenter);
     }
     private void CreateFirstPaarsImages(GridLayoutGroup gridLayoutGroup)
     {
