@@ -1,8 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public interface IImageView
 {
+    public TapOnImageHandler tapOnImageHandler{get;}
     public void SetImage(Sprite image);
 }

@@ -1,75 +1,68 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class GeneralImageGallery : IImageGallery
 {
-    private IFactory _factory;
-    private ImagesLoader _imagesLoader;
-    private List<ImagePresenter> _images;
     private GameObject _imagePrefab;
-    private Transform _imagesParent;
+    private IFactory _factory;
+    private ImagesSaver _imagesSaver;
+    private ImagesLoader _imagesLoader;
+    private SceneLoader _sceneLoader;
     private ScrollRect _scrollRect;
+    private List<ImagePresenter> _images;
+    private Transform _imagesParent;
     private bool _imagePoolIsEmpty;
     private const int DEFAULT_SCREEN_WIDTH = 1080;
 
-    public GeneralImageGallery(IFactory factory, ImagesLoader imagesLoader, GameObject imagePrefab, Transform parent)
+    public GeneralImageGallery(IFactory factory, GameObject imagePrefab, GameObject sceneLoaderPrefab, Transform parent)
     {
         _images = new List<ImagePresenter>();
         _factory = factory;
-        _imagesLoader = imagesLoader;
+        _imagesLoader = _factory.CreateImagesLoader();
+        _imagesSaver = _factory.CreateImagesSaver();
+        _sceneLoader = _factory.CreateSceneLoader(sceneLoaderPrefab, parent.parent);
         _imagePrefab = imagePrefab;
         _imagesParent = parent;
         GridLayoutGroup gridLayoutGroup = parent.GetComponent<GridLayoutGroup>();
         CreateFirstPaarsImages(gridLayoutGroup);
         SearchScrollRect(_imagesParent);
         _scrollRect.onValueChanged.AddListener(CheckEndOfScroll);
+        
     }
     public void CheckEndOfScroll(Vector2 scrollPosition)
     {
-        // Debug.Log(scrollPosition);
         if (!_imagePoolIsEmpty && scrollPosition.y < 0.00f)
         {
-            Debug.Log(scrollPosition);
             for (int i = 0; i < 2; i++)
             {
                 CreateImage();
             }
+            _imagePoolIsEmpty = true;
         }
+    }
+    public void SaveImageAndLoadShowScene(Sprite image)
+    {
+        _imagesSaver.SaveImage(image);
+        _sceneLoader.LoadSceneAsync("Show");
     }
 
     private async void CreateImage()
     {
-        // if (_imagePoolIsEmpty)
-        // {
-        //     return;
-        // }
-
-        // _imagePoolIsEmpty = true;
-        Sprite image = await _imagesLoader.TryLoadImage();
+        Sprite image = await _imagesLoader.TryLoadImageFromWeb();
         if (image != null)
         {
-            Debug.Log("not null");
             IImageModel imageModel = _factory.CreateImageModel();
             IImageView imageView = _factory.CreateImageView(_imagePrefab, _imagesParent);
-            ImagePresenter imagePresenter = _factory.CreateImagePresenter(imageModel, imageView);
+            ImagePresenter imagePresenter = _factory.CreateImagePresenter(imageModel, imageView, this);
             imageModel.SetImage(image);
             _images.Add(imagePresenter);
             _imagePoolIsEmpty = false;
         }
         else
         {
-            Debug.Log("null");
             _imagePoolIsEmpty = true;
         }
-        // IImageModel imageModel = _factory.CreateImageModel(_imagesLoader);
-        // IImageView imageView = _factory.CreateImageView(_imagePrefab, _imagesParent);
-        // ImagePresenter imagePresenter = _factory.CreateImagePresenter(imageModel, imageView);
-        // bool isCorrect = await imagePresenter.TryLoadImage();
-        // Debug.Log(isCorrect);
-        // _images.Add(imagePresenter);
     }
     private void CreateFirstPaarsImages(GridLayoutGroup gridLayoutGroup)
     {
@@ -78,6 +71,7 @@ public class GeneralImageGallery : IImageGallery
         {
             CreateImage();
         }
+
     }
     private int CalculateImagePaarsCount(GridLayoutGroup gridLayoutGroup)
     {

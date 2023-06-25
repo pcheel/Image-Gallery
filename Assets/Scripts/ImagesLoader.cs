@@ -1,8 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
-using System;
 using System.Threading.Tasks;
 
 public class ImagesLoader
@@ -15,27 +12,32 @@ public class ImagesLoader
     {
         _lastImageNumber = 0;
     }
-    public async Task<Sprite> TryLoadImage()
+    public async Task<Sprite> TryLoadImageFromWeb()
     {
         _lastImageNumber++;
-        UnityWebRequest req = UnityWebRequestTexture.GetTexture($"{URL}{_lastImageNumber}.jpg");
-        Debug.Log(req.result);
-        var asincOp = req.SendWebRequest();
-        // Debug.Log(req.result);
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture($"{URL}{_lastImageNumber}.jpg");
+        var asincOp = request.SendWebRequest();
         while (!asincOp.isDone)
         {
-            await Task.Delay(1000/30);
+            await Task.Delay(TASK_DELAY);
         }
 
-        if (req.result == UnityWebRequest.Result.Success)
+        if (request.result == UnityWebRequest.Result.Success)
         {
-            Texture2D texture = ((DownloadHandlerTexture)req.downloadHandler).texture as Texture2D;
+            Texture2D texture = ((DownloadHandlerTexture)request.downloadHandler).texture as Texture2D;
             return ConvertTexture2DToSprite(texture);
         }
         else
         {
             return null;
         }
+    }
+    public Sprite LoadSavedImage()
+    {
+        byte[] imageData = System.IO.File.ReadAllBytes($"{Application.persistentDataPath}/cache.png");
+        Texture2D imageTexture = new Texture2D(400,400);
+        imageTexture.LoadImage(imageData);
+        return ConvertTexture2DToSprite(imageTexture);
     }
 
     private Sprite ConvertTexture2DToSprite(Texture2D texture)

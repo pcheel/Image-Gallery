@@ -1,34 +1,40 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using System.Threading.Tasks;
 
 public class ImagePresenter
 {
     private IImageModel _imageModel;
     private IImageView _imageView;
+    private IImageGallery _imageGallery;
 
-    public ImagePresenter(IImageModel imageModel, IImageView imageView)
+    public ImagePresenter(IImageModel imageModel, IImageView imageView, IImageGallery imageGallery)
     {
         _imageModel = imageModel;
         _imageView = imageView;
+        _imageGallery = imageGallery;
         Enable();
-        // _imageModel.LoadImage();
     }
-    // public async Task<bool> TryLoadImage()
-    // {
-    //     return await _imageModel.LoadImage();
-    // }
     public void SetImage(Sprite image)
     {
         _imageView.SetImage(image);
     }
+    public void TapOnImage()
+    {
+        _imageGallery.SaveImageAndLoadShowScene(_imageModel.image);
+    }
     public void Enable()
     {
         _imageModel.ChangeImageAction += SetImage;
+        if (_imageView.tapOnImageHandler != null)
+        {
+            _imageView.tapOnImageHandler.TapOnImageAction += TapOnImage;
+        }
     }
     public void Disable()
     {
         _imageModel.ChangeImageAction -= SetImage;
+        if (_imageView.tapOnImageHandler != null)
+        {
+            _imageView.tapOnImageHandler.TapOnImageAction -= TapOnImage;
+        }
     }
 }
